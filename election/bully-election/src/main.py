@@ -2,7 +2,7 @@ from .cluster import Cluster
 import time
 
 if __name__ == "__main__":
-    cluster = Cluster(num_processes=5)
+    cluster = Cluster()
     cluster.start_all()
     
     time.sleep(2)
@@ -11,3 +11,4 @@ if __name__ == "__main__":
     
     
     time.sleep(5)  # Let the processes run for a while before exiting
+    cluster.check_leader()
