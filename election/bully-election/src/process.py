@@ -15,8 +15,6 @@ class Process(multiprocessing.Process):
         print(f"[Process {self.id}] 起動しました。")
         try:
             while True:
-                print(f"[Process {self.id}] 実行中...")
-                print("process_list:", self.process_list)
                 time.sleep(2)
         except KeyboardInterrupt:
             pass 
