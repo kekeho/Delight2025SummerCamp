@@ -1,7 +1,6 @@
-import multiprocessing
 import threading
 
-class Process(multiprocessing.Process):
+class Process():
     def __init__(self, process_id, all_process_ids):
         super().__init__()
         self.id = process_id
