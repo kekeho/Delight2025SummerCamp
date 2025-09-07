@@ -42,5 +42,5 @@ if __name__ == "__main__":
     #0なら10001、1なら10002、2なら10003を起動という具合
     index = input("Enter index (0, 1, or 2) to kill corresponding process after start: ")
     index = int(index) if index.isdigit() else None
-    p = Process(process_ids[index], process_ids) if index in [0,1,2] else None
+    p = Process(process_ids[index], process_ids) 
     p.run()
