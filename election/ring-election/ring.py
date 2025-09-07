@@ -31,7 +31,7 @@ class Process():
 
         while True:
             # 定期的にリーダーの存在を確認し、必要に応じて選挙を開始する
-            pass
+            pass 
 
 if __name__ == "__main__":
     # 簡単なテストのためにプロセスIDをいくつか定義
