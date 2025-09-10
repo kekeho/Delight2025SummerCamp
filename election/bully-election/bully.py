@@ -64,8 +64,11 @@ class Process():
             client_sock.settimeout(0.5)
             t = threading.Thread(target=self.handle_message, args=(client_sock,))
             t.start()
-
+    
     def ping(self) -> bool:
+        if self.leader_id == self.id:
+            return True
+
         # send 
         message = Message(PING, self.id)
         message_bytes = message.to_json_bytes()
@@ -87,14 +90,13 @@ class Process():
         sock.close()
         return True
     
-    def election_par_thread(self, dest_port: int):
+    def _election_par_thread(self, dest_port: int):
         message_bytes = Message(ELECTION, self.id).to_json_bytes()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(0.5)
 
         try:
             sock.connect(("127.0.0.1", dest_port))
-            print(f"connectted to {dest_port}")
             sock.send(message_bytes)
             data = sock.recv(1024)
             message = Message.from_json_bytes(data)
@@ -105,8 +107,7 @@ class Process():
                 self.giveup = True
             sock.close()
         except Exception as e:
-            print(e)
-            return
+            pass
     
     def send_message(self, dest_port: int, message: Message):
         message_data: bytes = message.to_json_bytes()
@@ -117,7 +118,7 @@ class Process():
             sock.send(message_data)
             sock.close()
         except Exception as e:
-            print(e)
+            pass
     
     def send_coordinator(self):
         coordinator_message = Message(COORDINATOR, self.id)
@@ -129,10 +130,9 @@ class Process():
 
     def election(self):
         print("選挙を開始")
-        # TODO: OKが帰ってきたら、、、対応しないといけない。実装を見直す。
         threads = []
         for bigger_process in filter(lambda p: self.id < p, self.all_process_ids):
-            t = threading.Thread(target=self.election_par_thread, args=(bigger_process,))
+            t = threading.Thread(target=self._election_par_thread, args=(bigger_process,))
             t.start()
             threads.append(t)
         for t in threads:
@@ -143,8 +143,7 @@ class Process():
             print("選挙負けた")
             return
         
-        print("選挙勝った!")
-
+        print(f"New Leader: {self.id}")
         self.leader_id = self.id
         self.send_coordinator()
 
@@ -164,7 +163,7 @@ class Process():
         if message.message_type == PING:
             self.reply_message(sock, PONG)
         if message.message_type == ELECTION:
-            if message.sender <= self.id:
+            if message.sender < self.id:
                 self.reply_message(sock, OK)
             self.election()
         if message.message_type == COORDINATOR:
@@ -185,7 +184,7 @@ class Process():
         while True:
             # 定期的にリーダーの存在を確認し、必要に応じて選挙を開始する
             # Ping to leader
-            if self.leader_id != self.id and self.ping() == False:
+            if self.ping() == False:
                 # TODO: leader election
                 self.election()
             time.sleep(1)
