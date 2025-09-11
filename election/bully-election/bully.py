@@ -49,8 +49,36 @@ class Process():
     def __init__(self, process_id: int, all_process_ids: List[int]):
         self.id = process_id
         self.all_process_ids = all_process_ids  # 全プロセスIDのリスト
-        self.leader_id = None  # 現在のリーダーID リーダーが決まったら更新
-        self.giveup = False
+        self.__leader_id = None  # 現在のリーダーID リーダーが決まったら更新
+        self.__giveup = False
+        self.__leader_id_lock = threading.Lock()
+        self.__giveup_lock = threading.Lock()
+    
+    @property
+    def leader_id(self):
+        self.__leader_id_lock.acquire()
+        value = self.__leader_id
+        self.__leader_id_lock.release()
+        return value
+    
+    @leader_id.setter
+    def leader_id(self, value):
+        self.__leader_id_lock.acquire()
+        self.__leader_id = value
+        self.__leader_id_lock.release()
+
+    @property
+    def giveup(self):
+        self.__giveup_lock.acquire()
+        value = self.__giveup
+        self.__giveup_lock.release()
+        return value
+
+    @giveup.setter
+    def giveup(self, value):
+        self.__giveup_lock.acquire()
+        self.__giveup = value
+        self.__giveup_lock.release()
 
     def keep_listening(self):
         #ソケット通信でデータを受信する
@@ -147,7 +175,6 @@ class Process():
         self.leader_id = self.id
         self.send_coordinator()
 
-
     def handle_message(self, sock: socket.socket):
         #keep_listeningから呼ばれ、受信したメッセージを処理する
         #メッセージタイプに応じて別の処理を行う
@@ -170,7 +197,6 @@ class Process():
             print(f"New Leader: {message.sender}")
             self.leader_id = message.sender
 
-
     def run(self):
         print(f"[Process {self.id}] 起動しました。")
         #個別スレッドとしてソケット通信を待つkeep_listeningを起動
@@ -184,10 +210,10 @@ class Process():
         while True:
             # 定期的にリーダーの存在を確認し、必要に応じて選挙を開始する
             # Ping to leader
+            time.sleep(1)
             if self.ping() == False:
                 # TODO: leader election
                 self.election()
-            time.sleep(1)
     
     def reply_message(self, sock: socket.socket, message: int):
         message_bytes = Message(message, self.id).to_json_bytes()
